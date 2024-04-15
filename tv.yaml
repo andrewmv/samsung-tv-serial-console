@@ -1,0 +1,168 @@
+# 2024-02 andrewmv@gmail.com
+#
+# ESPHome Controller for controlling Samsung TV using the RS232 service port
+#
+# Hardware: 3.3V to +/-5V level shifted RS232 on primary ESP8266 UART
+#
+# Command reference: https://support.justaddpower.com/kb/article/16-samsung-rs232-control-exlink/
+
+esphome:
+  name: living_room_tv
+  platform: ESP8266
+  board: nodemcuv2
+
+wifi:
+  ssid: !secret ssid
+  password: !secret wappw
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "TV Fallback"
+    password: !secret hotspotpw
+
+captive_portal:
+
+# Disable logging over USB (to avoid UART conflict)
+logger:
+  baud_rate: 0
+
+# Enable Home Assistant API
+api:
+  password: !secret apipw
+
+ota:
+  password: !secret apipw
+
+## One of the following two stanzas must be commented out ##
+
+# Use blue LED to indicate connection status
+status_led:
+  pin:
+    number: GPIO2
+    inverted: true
+
+# Pull blue LED high to turn it off
+# output:
+#   - platform: gpio 
+#     pin: GPIO2
+#     inverted: true
+#     id: status_led
+
+uart:
+  tx_pin: 
+    number: GPIO1
+    inverted: false
+  rx_pin: GPIO3
+  baud_rate: 9600
+  debug:
+    direction: RX
+    dummy_receiver: true
+
+# Select entity (drop-down menu) for choosing HDMI Input
+select:
+  - platform: template
+    id: tv_hdmi_selector
+    name: TV HDMI Selector
+    icon: mdi:video-input-hdmi
+    optimistic: true
+    restore_value: true
+    options:
+      - HDMI 1
+      - HDMI 2
+      - HDMI 3
+      - HDMI 4
+    initial_option: HDMI 1
+    set_action:
+      then:
+      - lambda: 'ESP_LOGD("main", "Select action: %s", x.c_str());'
+      - if:
+          condition:
+            lambda: 'return (strcmp(x.c_str(), "HDMI 1") == 0);'
+          then:
+            - logger.log: "Setting TV input to HDMI 1"
+            - script.execute: switch_to_hdmi_1
+      - if:
+          condition:
+            lambda: 'return (strcmp(x.c_str(), "HDMI 2") == 0);'
+          then:
+            - logger.log: "Setting TV input to HDMI 2"
+            - script.execute: switch_to_hdmi_2
+      - if:
+          condition:
+            lambda: 'return (strcmp(x.c_str(), "HDMI 3") == 0);'
+          then:
+            - logger.log: "Setting TV input to HDMI 3"
+            - script.execute: switch_to_hdmi_3
+      - if:
+          condition:
+            lambda: 'return (strcmp(x.c_str(), "HDMI 4") == 0);'
+          then:
+            - logger.log: "Setting TV input to HDMI 4"
+            - script.execute: switch_to_hdmi_4
+
+switch:
+  # Power switch
+  - platform: template
+    name: Living Room TV
+    id: living_room_tv
+    optimistic: true
+    assumed_state: true
+    turn_on_action:
+      then:
+        - script.execute: power_on
+    turn_off_action:
+      then:
+        - script.execute: power_off
+
+button:
+  # Volume controls
+  - platform: template
+    name: Living Room TV Volume Up
+    id: living_room_tv_volume_up
+    icon: "mdi:volume-plus"
+    on_press:
+      then:
+        - script.execute: volume_up
+  - platform: template
+    name: Living Room TV Volume Down
+    id: living_room_tv_volume_down
+    icon: "mdi:volume-minus"
+    on_press:
+      then:
+        - script.execute: volume_down
+  - platform: template
+    name: Living Room TV Mute
+    id: living_room_tv_mute
+    icon: "mdi:volume-mute"
+    on_press:
+      then:
+        - script.execute: mute
+
+script:
+  - id: power_on
+    then:
+    - uart.write: [0x08, 0x22, 0x00, 0x00, 0x00, 0x02, 0xd4]
+  - id: power_off
+    then:
+    - uart.write: [0x08, 0x22, 0x00, 0x00, 0x00, 0x01, 0xd5]
+  - id: switch_to_hdmi_1
+    then:
+    - uart.write: [0x08, 0x22, 0x0a, 0x00, 0x05, 0x00, 0xc7]
+  - id: switch_to_hdmi_2
+    then:
+    - uart.write: [0x08, 0x22, 0x0a, 0x00, 0x05, 0x01, 0xc6]
+  - id: switch_to_hdmi_3
+    then:
+    - uart.write: [0x08, 0x22, 0x0a, 0x00, 0x05, 0x02, 0xc5]
+  - id: switch_to_hdmi_4
+    then:
+    - uart.write: [0x08, 0x22, 0x0a, 0x00, 0x05, 0x03, 0xc4]
+  - id: volume_up
+    then:
+    - uart.write: [0x08, 0x22, 0x01, 0x00, 0x01, 0x00, 0xd4]
+  - id: volume_down
+    then:
+    - uart.write: [0x08, 0x22, 0x01, 0x00, 0x02, 0x00, 0xd3]
+  - id: mute
+    then:
+    - uart.write: [0x08, 0x22, 0x02, 0x00, 0x00, 0x00, 0xd4]
