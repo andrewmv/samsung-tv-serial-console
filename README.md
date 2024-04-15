@@ -16,6 +16,8 @@ Some Samsung smart TV's have an 3.5mm Ex-Link control jack designed for commerci
 
 The ExLink port doesn't provide any state information about the TV, so it's not possible to assemble a media card - only buttons for basic functions. Most functions are idempotent however, so they can be used safely in automations.
 
+The ExLink port doesn't provide any control over smart TV functionality, such as launching or controlling apps, or interacting with the Home screen. It can, however, exit an app or dismiss the home screen by switching to a specific external input.
+
 ## Hardware
 
 Ex-Link uses -6V to 6V (12V swing) RS232, so you'll need to connect the UART of an ESPHome compatible target board (such as an ESP8266) to a TTL(3.3V)/RS232 level shifter.
