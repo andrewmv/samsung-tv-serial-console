@@ -1,6 +1,6 @@
 # Samsung TV Serial Console
 
-An ESPHome configuration to use an ESP8266 to control a Samsung smart TV's input and power state using Home Assistant via the RS232 ExLink control port
+An [ESPHome](https://esphome.io/) configuration to use an ESP8266 to control a Samsung smart TV's input and power state using Home Assistant via the RS232 ExLink control port
 
 ## Problem Statement
 
@@ -27,6 +27,8 @@ The Ex-Link jack is wired as follows:
 |Base	|Ground 		|
 
 ## Software
+
+If you haven't done so already, set up ESPHome on your workstation: https://esphome.io/guides/getting_started_command_line
 
 Customize `tv.yaml` to suit your needs (e.g. rename the TV entity)
 
